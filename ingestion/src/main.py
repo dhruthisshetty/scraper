@@ -3,16 +3,7 @@ import os
 from lamda.process.json_processor import process_employee_data
 
 def lambdaHandler(event, context):
-    """
-    Main handler function for Lambda execution
-    
-    Args:
-        event (dict): Input event data containing scraper information
-        context: Lambda context (unused in this implementation)
-        
-    Returns:
-        dict: Response containing scraper execution status
-    """
+   
     try:
         # Extract scraper information from the input event
         scraper_input = event.get("scraper_input", {})
