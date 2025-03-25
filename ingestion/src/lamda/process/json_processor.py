@@ -4,15 +4,6 @@ import time
 from datetime import datetime
 
 def process_employee_data(scraper_config):
-    """
-    Process employee data from the API endpoint
-    
-    Args:
-        scraper_config (dict): Configuration for the scraper
-        
-    Returns:
-        dict: Processed employee data
-    """
     # Get the API URL from the scraper config or use the default
     api_url = scraper_config.get("api_url", "https://api.slingacademy.com/v1/sample-data/files/employees.json")
     
