@@ -15,7 +15,7 @@ class TestJsonProcessor(unittest.TestCase):
         # Sample scraper configuration for testing
         self.scraper_config = {
             "scraper_id": "100",
-            "scraper_name": "csv_100",
+            "scraper_name": "json_100",
             "api_url": "https://api.slingacademy.com/v1/sample-data/files/employees.json"
         }
         
