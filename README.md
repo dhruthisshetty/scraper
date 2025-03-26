@@ -69,7 +69,7 @@ To run the scraper:
 4. **Validate Data Structure**
 5. **Handle Missing or Invalid Data**
 
-To run the scraper
+
 **Execute the test**:
    ```bash
    python lamda/tests/test_json_processor.py
