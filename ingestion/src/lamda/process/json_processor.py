@@ -58,15 +58,8 @@ def process_employee_data(scraper_config):
     raise Exception("Failed to process employee data")
 
 def transform_employee_data(raw_data):
-    """
-    Transform and normalize the employee data according to requirements
+  list: Transformed employee data
     
-    Args:
-        raw_data (dict): Raw employee data from the API
-        
-    Returns:
-        list: Transformed employee data
-    """
     transformed_data = []
     
     # Extract employees data - handle different possible structures
