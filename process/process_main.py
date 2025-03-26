@@ -42,15 +42,7 @@ def lambdaHandler(event, context):
         }
 
 def get_scraper_config(scraper_name):
-    """
-    Get scraper configuration from run_scraper.json file
-    
-    Args:
-        scraper_name (str): Name of the scraper to find
-        
-    Returns:
-        dict: Scraper configuration or None if not found
-    """
+  
     try:
         # Load the scraper configuration from run_scraper.json
         with open('run_scraper.json', 'r') as config_file:
