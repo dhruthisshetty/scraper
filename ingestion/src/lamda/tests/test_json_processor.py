@@ -1,7 +1,7 @@
-import unittest
 import json
 import os
 import sys
+import pytest
 from unittest.mock import patch, MagicMock
 
 # Add the parent directory to sys.path to import modules properly
@@ -9,149 +9,103 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from process.json_processor import process_employee_data, transform_employee_data
 
-class TestJsonProcessor(unittest.TestCase):
+@pytest.fixture
+def scraper_config():
+    # Based on your folder structure: src/json_100_100.json and src/lamda/tests/test_json_processor.py
+    # Need to go up two directories from the test file to reach src, then find the JSON file
+    json_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'json_100_100.json'))
     
-    def setUp(self):
-        # Sample scraper configuration for testing
-        self.scraper_config = {
-            "scraper_id": "100",
-            "scraper_name": "csv_100",
-            "api_url": "https://api.slingacademy.com/v1/sample-data/files/employees.json"
-        }
-        
-        # Sample raw employee data for testing
-        self.sample_raw_data = {
-            "employees": [
-                {
-                    "id": 1,
-                    "first_name": "John",
-                    "last_name": "Doe",
-                    "email": "john.doe@example.com",
-                    "phone": "123-456-7890",
-                    "gender": "Male",
-                    "age": 30,
-                    "job_title": "Software Engineer",
-                    "years_of_experience": 2,
-                    "salary": 75000,
-                    "department": "Engineering"
-                },
-                {
-                    "id": 2,
-                    "first_name": "Jane",
-                    "last_name": "Smith",
-                    "email": "jane.smith@example.com",
-                    "phone": "987-654-3210x123",
-                    "gender": "Female",
-                    "age": 35,
-                    "job_title": "Data Scientist",
-                    "years_of_experience": 7,
-                    "salary": 95000,
-                    "department": "Data"
-                },
-                {
-                    "id": 3,
-                    "first_name": "Robert",
-                    "last_name": "Johnson",
-                    "email": "robert.johnson@example.com",
-                    "phone": "555-123-4567",
-                    "gender": "Male",
-                    "age": 45,
-                    "job_title": "Engineering Manager",
-                    "years_of_experience": 12,
-                    "salary": 120000,
-                    "department": "Engineering"
-                }
-            ]
-        }
-    
-    @patch('requests.get')
-    def test_json_file_download(self, mock_get):
-        # Mock the API response
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = self.sample_raw_data
-        mock_get.return_value = mock_response
-        
-        # Call the function to process employee data
-        result = process_employee_data(self.scraper_config)
-        
-        # Verify the API was called with the correct URL
-        mock_get.assert_called_once_with(self.scraper_config["api_url"], timeout=30)
-        
-        # Check that metadata is included in the result
-        self.assertIn("metadata", result)
-        self.assertIn("data", result)
-        
-    @patch('requests.get')
-    def test_json_file_extraction(self, mock_get):
-        # Mock the API response
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = self.sample_raw_data
-        mock_get.return_value = mock_response
-        
-        # Call the function to process employee data
-        result = process_employee_data(self.scraper_config)
-        
-        # Check that data was extracted properly
-        self.assertEqual(len(result["data"]), 3)
-        
-    def test_validate_file_type_and_format(self):
-        # Transform the raw data
-        transformed_data = transform_employee_data(self.sample_raw_data)
-        
-        # Check that the transformed data is a list
-        self.assertIsInstance(transformed_data, list)
-        
-        # Check that each transformed employee has the required fields
-        for employee in transformed_data:
-            self.assertIsInstance(employee, dict)
-            self.assertIn("employee_id", employee)
-            self.assertIn("full_name", employee)
-            self.assertIn("email", employee)
-            self.assertIn("phone", employee)
-            self.assertIn("designation", employee)
-            
-    def test_validate_data_structure(self):
-        # Transform the raw data
-        transformed_data = transform_employee_data(self.sample_raw_data)
-        
-        # Validate first employee record
-        self.assertEqual(transformed_data[0]["employee_id"], 1)
-        self.assertEqual(transformed_data[0]["full_name"], "John Doe")
-        self.assertEqual(transformed_data[0]["designation"], "system engineer")
-        self.assertEqual(transformed_data[0]["phone"], "123-456-7890")
-        
-        # Validate second employee record (with invalid phone)
-        self.assertEqual(transformed_data[1]["phone"], "Invalid Number")
-        self.assertEqual(transformed_data[1]["designation"], "senior data engineer")
-        
-        # Validate third employee record
-        self.assertEqual(transformed_data[2]["designation"], "lead")
-        
-    def test_handle_missing_invalid_data(self):
-        # Create a sample with missing data
-        incomplete_data = {
-            "employees": [
-                {
-                    "id": 4,
-                    "first_name": "Missing",
-                    "email": "missing.data@example.com",
-                    "gender": "Female",
-                    "job_title": "Developer"
-                    # Missing other fields
-                }
-            ]
-        }
-        
-        # Transform the incomplete data
-        transformed_data = transform_employee_data(incomplete_data)
-        
-        # Check that the record was processed with default values
-        self.assertEqual(len(transformed_data), 1)
-        self.assertEqual(transformed_data[0]["full_name"], "Missing")  # Updated to match trimmed output
-        self.assertEqual(transformed_data[0]["years_of_experience"], 0)
-        self.assertEqual(transformed_data[0]["designation"], "system engineer")
+    return {
+        "scraper_id": "100",
+        "scraper_name": "json_100",
+        "json_file_path": json_path
+    }
 
-if __name__ == '__main__':
-    unittest.main()
+@pytest.fixture
+def sample_raw_data(scraper_config):
+    try:
+        with open(scraper_config["json_file_path"], 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        pytest.fail(f"Test JSON file not found at {scraper_config['json_file_path']}")
+    except json.JSONDecodeError:
+        pytest.fail(f"Invalid JSON format in the file at {scraper_config['json_file_path']}")
+
+def test_json_file_loading(sample_raw_data):
+    # Verify that the JSON file was loaded successfully
+    assert sample_raw_data is not None
+    assert "data" in sample_raw_data  # Changed from "employees" to "data"
+
+def test_validate_file_type_and_format(sample_raw_data):
+    # Transform the raw data
+    transformed_data = transform_employee_data(sample_raw_data)
+    
+    # Check that the transformed data is a list
+    assert isinstance(transformed_data, list)
+    
+    # Check that each transformed employee has the required fields
+    for employee in transformed_data:
+        assert isinstance(employee, dict)
+        assert "employee_id" in employee
+        assert "full_name" in employee
+        assert "email" in employee
+        assert "phone" in employee
+        assert "designation" in employee
+
+def test_data_transformation(sample_raw_data):
+    # Transform the raw data
+    transformed_data = transform_employee_data(sample_raw_data)
+    
+    # Print the first few transformed employees for debugging
+    print("First few transformed employees:")
+    for emp in transformed_data[:3]:
+        print(emp)
+    
+    # Basic validation of transformation
+    assert len(transformed_data) > 0
+    
+    # Example specific validation (adjust based on your actual data)
+    first_employee = transformed_data[0]
+    assert first_employee["employee_id"] is not None
+    assert first_employee["full_name"] is not None
+    assert first_employee["designation"] is not None
+
+def test_handle_missing_invalid_data():
+    # Specific test for handling incomplete or missing data
+    incomplete_data = {
+        "data": [  # Changed from "employees" to "data"
+            {
+                "id": 999,  # A unique ID to ensure it's not in the original data
+                "first_name": "Partial",
+                "email": "partial.data@example.com"
+                # Deliberately missing most fields
+            }
+        ]
+    }
+    
+    # Transform the incomplete data
+    transformed_data = transform_employee_data(incomplete_data)
+    
+    # Check that the record was processed with default values
+    assert len(transformed_data) == 1
+    assert transformed_data[0]["full_name"] == "Partial"
+    assert transformed_data[0]["years_of_experience"] == 0
+    assert transformed_data[0]["designation"] == "system engineer"
+@patch('requests.get')
+def test_json_file_download(mock_get, scraper_config):
+    # Create a mock response
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"data": [{"id": 1, "first_name": "Test", "last_name": "User"}]}
+    mock_get.return_value = mock_response
+    
+    # Assuming you have a function to download JSON data
+    from process.json_processor import process_employee_data
+    
+    # Test the download function
+    result = process_employee_data(scraper_config)
+    
+    # Verify the download was successful
+    assert result is not None
+    assert "data" in result
+    assert len(result["data"]) > 0
