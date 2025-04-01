@@ -72,7 +72,7 @@ To run the scraper:
 
 **Execute the test**:
    ```bash
-   python lamda/tests/test_json_processor.py
+   pytest test_json_processor.py -v
    ```
 
 
